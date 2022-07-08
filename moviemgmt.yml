@@ -1,0 +1,57 @@
+apiVersion: apps/v1 #we know that all the communication in k8s happen through api. 
+#what we want to create
+#inside kind you need to define type of api you want to execute. 
+kind: Deployment #pod#service
+metadata: #using metada and name we define the name of deployment
+  name: employeemgmt #a deployment name myapp-deployment is created using .metadata.name field
+  labels:
+    app: employeemgmt
+spec: #inside your deployment we need to provide spec how this deployment api will launch your pod
+  replicas: 1 #it will create three pod
+  selector: #the .spec.selector file define ho the deployment find which pod to manage. 
+    matchLabels: #.spec.selector.matchlabel it is euqivalent to map ke,value. something called as match expression
+      app: employeemgmt
+  
+  template: #container template deploy in three pod
+    metadata:
+      name: employeemgmt   #using metadata name
+      labels: 
+        app: employeemgmt  #this label should match with pod label. 
+    spec: #we define container spec
+        
+        containers:
+          - name: employeemgmt  
+            image: poojarn/k8smovieapp
+            ports:
+              - containerPort: 8080
+                name: mysql 
+            env:
+              - name: DB_HOSTNAME
+                value: "mysql-service"
+              - name: DB_PORT
+                value: "3306"
+              - name: DB_NAME
+                value: "bookmyshow"
+              - name: DB_USERNAME
+                value: "root"
+              - name: DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: mydbsecret #this is the name of the secret
+                    key: dbpassword
+                    
+---
+apiVersion: v1                # API version
+kind: Service                 # Type of the kubernetes resource
+metadata:                     
+  name: employeemgmt           # Name of the kubernetes resource
+  labels:                     # Labels that will be applied to this resource
+    app: employeemgmt
+spec:                         
+  type: LoadBalancer              # The service will be exposed by opening a Port on each node and proxying it. 
+  selector:
+    app: employeemgmt          # The service exposes Pods with label `app=polling-app-server`
+  ports:                      # Forward incoming connections on port 8080 to the target port 8081
+  - name: http
+    port: 80
+    targetPort: 8080
